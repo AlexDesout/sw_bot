@@ -5,6 +5,6 @@ module.exports = {
 		.setName('number')
 		.setDescription('Display a random number.'),
 	async execute(interaction) {
-		await interaction.reply(`Your number ${Math.floor(Math.random() * 1000)}`);
+		await interaction.reply(`Your number ${Math.floor(Math.random() * 1000)} OKKKKKKK`);
 	},
 };
