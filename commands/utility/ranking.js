@@ -8,8 +8,7 @@ module.exports = {
     async execute(interaction) {
         try {
             // Appel de la méthode get pour récupérer le classement des joueurs
-            const players = await api.get('ranking');
-
+            const players = await api.get('api/players/ranking');
             if (players.data.length === 0) {
                 await interaction.reply('No players found.');
                 return;
@@ -25,10 +24,9 @@ module.exports = {
             // Limit the number of players to 10
             const topPlayers = players.data.slice(0, 10);
 
-
             // Formatage du classement pour l'embed
             let rankingDescription = '';
-            topPlayers.data.forEach((player, index) => {
+            topPlayers.forEach((player, index) => {
                 rankingDescription += `**${index + 1}. ${player.username}** | Points: ${player.total_points}\n`;
             });
 
