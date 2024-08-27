@@ -30,7 +30,7 @@ class Api {
       // Définir une expiration en fonction des informations reçues
       this.tokenExpirationTime = Date.now() + 3600 * 1000; // Exemple : le token expire dans 1 heure
 
-      console.log('Token obtained:', this.token);
+    //   console.log('Token obtained:', this.token);
     } catch (error) {
       console.error('Error getting token:', error);
       throw error;

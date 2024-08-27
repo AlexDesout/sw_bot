@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const api = require('../../utils/apiInstance'); // Utiliser require pour les modules CommonJS
+const api = require('../../utils/apiInstance');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,10 +7,16 @@ module.exports = {
         .setDescription('Display the player ranking.'),
     async execute(interaction) {
         try {
-            // Appel de la méthode get pour récupérer le classement des joueurs
+            // Appel de l'API pour récupérer le classement des joueurs
             const players = await api.get('api/players/ranking');
+
+            // Vérification si des joueurs sont retournés
             if (players.data.length === 0) {
-                await interaction.reply('No players found.');
+                try {
+                    await interaction.reply('No players found.');
+                } catch (replyError) {
+                    console.error('Error sending "No players found" reply:', replyError);
+                }
                 return;
             }
 
@@ -21,23 +27,30 @@ module.exports = {
                 .setDescription('Voici le classement des joueurs :\n')
                 .setTimestamp();
 
-            // Limit the number of players to 10
-            const topPlayers = players.data.slice(0, 10);
-
             // Formatage du classement pour l'embed
             let rankingDescription = '';
-            topPlayers.forEach((player, index) => {
+            players.data.forEach((player, index) => {
                 rankingDescription += `**${index + 1}. ${player.username}** | Points: ${player.total_points}\n`;
             });
 
             // Mise à jour de la description de l'embed
             embed.setDescription(`Voici le classement des joueurs :\n\n${rankingDescription}`);
 
-            // Envoyer l'embed dans le canal Discord
-            await interaction.reply({ embeds: [embed] });
+            // Envoi de l'embed dans le canal Discord
+            try {
+                await interaction.reply({ embeds: [embed] });
+            } catch (replyError) {
+                console.error('Error sending ranking embed:', replyError);
+                await interaction.followUp('There was an error sending the ranking.');
+            }
+
         } catch (error) {
             console.error('Error fetching ranking:', error);
-            await interaction.reply('There was an error fetching the ranking.');
+            try {
+                await interaction.reply('There was an error fetching the ranking.');
+            } catch (replyError) {
+                console.error('Error sending error message:', replyError);
+            }
         }
     },
 };
