@@ -24,17 +24,17 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setTitle('🏆 Player Ranking 🏆')
                 .setColor('#c213b8') // Couleur de l'embed
-                .setDescription('Voici le classement des joueurs :\n')
+                .setDescription('Here is the player leaderboard:\n')
                 .setTimestamp();
 
             // Formatage du classement pour l'embed
             let rankingDescription = '';
             players.data.forEach((player, index) => {
-                rankingDescription += `**${index + 1}. ${player.username}** | Points: ${player.total_points}\n`;
+                rankingDescription += `**${index + 1}. <@${player.discord_id}>** | Points: ${player.total_points}\n`;
             });
 
             // Mise à jour de la description de l'embed
-            embed.setDescription(`Voici le classement des joueurs :\n\n${rankingDescription}`);
+            embed.setDescription(`Here is the player leaderboard:\n\n${rankingDescription}`);
 
             // Envoi de l'embed dans le canal Discord
             try {

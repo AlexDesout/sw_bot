@@ -8,32 +8,39 @@ function generateUniqueId() {
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('myprediction')
-        .setDescription('Display all your predictions.'),
+        .setName('managepredictions')
+        .setDescription('[ADMIN] manage predictions'),
     async execute(interaction) {
-        const userId = interaction.user.id;
+        const allowedUserId = ['521433111486005261'];
+
+        if (!allowedUserId.includes(String(interaction.user.id))) {
+            await interaction.reply({
+                content: 'You do not have permission to use this command.',
+                ephemeral: true
+            });
+            return;
+        }
 
         try {
             // Appel à l'API pour obtenir les prédictions de l'utilisateur
-            const predictions = await api.get(`/api/predictions/player/${userId}`);
+            const predictions = await api.get(`/api/predictions/`);
             const categories = await api.get('/api/categories');
 
             // Map les catégories par leur ID pour un accès facile
-            const categoryMap = new Map(categories.data.map(cat => [cat.id, cat.name]));
+            const categoryMap = new Map(categories.data.map(cat => [cat.id, cat]));
 
             if (predictions.data.length === 0) {
-                await interaction.reply('You have no predictions.');
+                await interaction.reply({ content: 'You have no predictions.', ephemeral: true });
                 return;
             }
 
             // Créer les embeds pour les prédictions
             const embeds = predictions.data.map((p, index) => {
-                const categoryName = categoryMap.get(p.category_id) || 'Unknown Category';
+                const categoryName = categoryMap.get(p.category_id).name || 'Unknown Category';
                 return new EmbedBuilder()
                     .setTitle(`Prediction ${index + 1} 🧐`)
-                    .setDescription(`<@${p.user_id}>\nwill be the next in category **${categoryName}**\n\nPredicted on: ${p.created_at}`)
+                    .setDescription(`<@${p.player_id}> thinks <@${p.user_id}>\nwill be the next in category **${categoryName}**\n\nPredicted on: ${p.created_at}`)
                     .setColor('#c213b8')
-                    .setThumbnail(interaction.user.displayAvatarURL()) // Ajouter l'avatar de l'utilisateur
                     .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
             });
 
@@ -61,7 +68,11 @@ module.exports = {
                     new ButtonBuilder()
                         .setCustomId(`${uniqueId}_delete`)
                         .setLabel('Delete Prediction')
-                        .setStyle('Danger')
+                        .setStyle('Danger'),
+                    new ButtonBuilder()
+                        .setCustomId(`${uniqueId}_win`)
+                        .setLabel('Win Prediction')
+                        .setStyle('Success')
                 );
 
             // Envoyer le premier embed
@@ -104,6 +115,30 @@ module.exports = {
                         });
                         return;
                     }
+                } else if (i.customId.endsWith('_win')) {
+                    const associatedCategory = categoryMap.get(predictions.data[currentPage].category_id) || 'Unknown Category';
+                    const predictionId = predictions.data[currentPage].id;
+
+                    try {
+                        await api.post(`/api/predictions/${predictionId}/win`);
+                        await i.reply({
+                            content: `The player <@${predictions.data[currentPage].player_id}> has won their prediction in the category **${associatedCategory.name}**. \nHe has earned **${associatedCategory.points}** points 💰`,
+                            components: [],
+                        });
+
+                        const replyMessage = await i.fetchReply(); // Récupère le message envoyé
+                        await replyMessage.react('1278285028849090591');
+
+                        return;
+                    } catch (deleteError) {
+                        console.error('Error winning prediction:', deleteError);
+                        await i.update({
+                            content: 'An error occurred while winning the prediction.',
+                            components: [],
+                            ephemeral: true
+                        });
+                        return;
+                    }
                 }
 
                 // Met à jour les boutons et l'embed
@@ -125,7 +160,11 @@ module.exports = {
                                 new ButtonBuilder()
                                     .setCustomId(`${uniqueId}_delete`)
                                     .setLabel('Delete Prediction')
-                                    .setStyle('Danger')
+                                    .setStyle('Danger'),
+                                new ButtonBuilder()
+                                    .setCustomId(`${uniqueId}_win`)
+                                    .setLabel('Win Prediction')
+                                    .setStyle('Success')
                             )]
                 });
             });
@@ -148,6 +187,11 @@ module.exports = {
                             .setCustomId(`${uniqueId}_delete`)
                             .setLabel('Delete Prediction')
                             .setStyle('Danger')
+                            .setDisabled(true),
+                        new ButtonBuilder()
+                            .setCustomId(`${uniqueId}_win`)
+                            .setLabel('Win Prediction')
+                            .setStyle('Success')
                             .setDisabled(true)
                     );
 
@@ -162,7 +206,7 @@ module.exports = {
         } catch (error) {
             console.error('Error fetching predictions:', error);
             try {
-                await interaction.reply('An error occurred while fetching your predictions.');
+                await interaction.reply({ content: 'An error occurred while fetching your predictions.', ephemeral: true });
             } catch (replyError) {
                 console.error('Error sending error message:', replyError);
             }
