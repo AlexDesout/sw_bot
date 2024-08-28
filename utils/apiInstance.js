@@ -2,7 +2,8 @@ const Api = require('./api');
 require('dotenv').config();
 
 // Remplacez par l'URL de base de votre API
-const BASE_URL = 'http://localhost:8080';
+// const BASE_URL = 'http://localhost:8080';
+const BASE_URL = 'https://desoutter.alwaysdata.net';
 
 // Remplacez par le point de terminaison d'authentification
 const AUTH_ENDPOINT = '/api/auth/login';
